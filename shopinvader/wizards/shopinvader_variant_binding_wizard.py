@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 # Copyright 2017 ACSONE SA/NV
+# Copyright 2021 Camptocamp (http://www.camptocamp.com).
+# @author Simone Orsi <simahawk@gmail.com>
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
 from collections import defaultdict
@@ -21,6 +23,14 @@ class ShopinvaderVariantBindingWizard(models.TransientModel):
     product_ids = fields.Many2many(
         string="Products", comodel_name="product.product", ondelete="cascade"
     )
+    lang_ids = fields.Many2many(
+        string="Langs",
+        comodel_name="res.lang",
+        ondelete="cascade",
+        help="List of langs for which a binding must exists. If not "
+        "specified, the list of langs defined on the backend is used.",
+    )
+    run_immediately = fields.Boolean(help="Do not schedule jobs.")
 
     @api.model
     def default_get(self, fields_list):
@@ -69,34 +79,24 @@ class ShopinvaderVariantBindingWizard(models.TransientModel):
     @api.multi
     def bind_products(self):
         for wizard in self:
-            binded_templates = wizard._get_binded_templates()
-            binding = self.env["shopinvader.variant"]
-            for product in wizard.product_ids:
-                binded_products = binded_templates[product.product_tmpl_id]
-                for shopinvader_product in binded_products.values():
-                    binded_variants = (
-                        shopinvader_product.shopinvader_variant_ids
-                    )
-                    bind_record = binded_variants.filtered(
-                        lambda p: p.record_id == product
-                    )
-                    if not bind_record:
-                        data = {
-                            "record_id": product.id,
-                            "backend_id": wizard.backend_id.id,
-                            "shopinvader_product_id": shopinvader_product.id,
-                        }
-                        binding.create(data)
-                    elif not bind_record.active:
-                        bind_record.write({"active": True})
-            wizard.backend_id.auto_bind_categories()
+            backend = wizard.backend_id
+            method = backend.with_delay().bind_selected_products
+            if wizard.run_immediately:
+                method = backend.bind_selected_products
+            method(
+                wizard.product_ids,
+                langs=wizard.lang_ids,
+                run_immediately=wizard.run_immediately,
+            )
 
     @api.model
     def bind_langs(self, backend, lang_ids):
         """Ensure that a shopinvader.variant exists for each lang_id.
+
         If not, create a new binding for the missing lang. This method is useful
         to ensure that when a lang is added to a backend, all the binding
         for this lang are created for the existing bound products.
+
         :param backend: backend record
         :param lang_ids: list of lang ids we must ensure that a binding exists
         :return:
@@ -111,11 +111,11 @@ class ShopinvaderVariantBindingWizard(models.TransientModel):
         # the specified lang and the process will create the missing one.
 
         # TODO 'new({})' doesn't work into V13 -> should use model lassmethod
-        wiz = self.new(
+        wiz = self.create(
             {
                 "lang_ids": self.env["res.lang"].browse(lang_ids),
                 "backend_id": backend.id,
-                "product_ids": bound_products,
+                "product_ids": [(6, 0, bound_products.ids)],
             }
         )
         wiz.bind_products()

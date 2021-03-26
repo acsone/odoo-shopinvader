@@ -110,11 +110,11 @@ class ShopinvaderCategoryBindingWizard(models.TransientModel):
         # the specified lang and the process will create the missing one.
 
         # TODO 'new({})' doesn't work into V13 -> should use model lassmethod
-        wiz = self.new(
+        wiz = self.create(
             {
                 "lang_ids": self.env["res.lang"].browse(lang_ids),
                 "backend_id": backend.id,
-                "product_category_ids": binded_categories,
+                "product_category_ids": [(6, 0, binded_categories.ids)],
             }
         )
         wiz.action_bind_categories()

@@ -16,14 +16,16 @@ class BackendCase(CommonCase):
         )
         cls.backend = cls.backend.with_context(test_queue_job_no_delay=True)
 
-    def _bind_all_product(self):
-        self.backend.bind_all_product()
-        return (
-            self.env["product.template"].search_count(
-                [("sale_ok", "=", True)]
-            ),
-            self.env["shopinvader.product"].search_count([]),
+    def _all_products_count(self):
+        return self.env["product.template"].search_count(
+            [("sale_ok", "=", True)]
         )
+
+    def _all_products_binding_count(self):
+        return self.env["shopinvader.product"].search_count([])
+
+    def _bind_all_product(self, domain=None):
+        self.backend.bind_all_product(domain=domain)
 
     def _bind_all_category(self):
         self.backend.bind_all_category()
@@ -33,15 +35,23 @@ class BackendCase(CommonCase):
         )
 
     def test_bind_all_product(self):
-        self.assertEqual(*self._bind_all_product())
+        self.assertEqual(
+            self._all_products_count(), self._all_products_binding_count()
+        )
 
     def test_rebind_all_product(self):
         self._bind_all_product()
         self.env["shopinvader.variant"].search([], limit=1).unlink()
-        self.assertEqual(*self._bind_all_product())
+        self.assertEqual(
+            self._all_products_count(), self._all_products_binding_count()
+        )
 
     def test_bind_all_category(self):
-        self.assertEqual(*self._bind_all_category())
+        self._bind_all_category()
+        self.assertEqual(
+            self.env["product.category"].search_count([]),
+            self.env["shopinvader.category"].search_count([]),
+        )
 
     def test_rebind_all_category(self):
         self._bind_all_category()
