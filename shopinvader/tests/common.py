@@ -10,7 +10,11 @@ import mock
 from odoo.exceptions import MissingError
 from odoo.tests import SavepointCase
 
-from odoo.addons.base_rest.controllers.main import _PseudoCollection
+from odoo.addons.base_rest.controllers.main import (
+    RestController,
+    _PseudoCollection,
+)
+from odoo.addons.base_rest.core import _rest_controllers_per_module
 from odoo.addons.base_rest.tests.common import BaseRestCase
 from odoo.addons.component.core import WorkContext
 from odoo.addons.component.tests.common import ComponentMixin
@@ -122,8 +126,21 @@ class CommonCase(SavepointCase, CommonMixin):
                 cls.env.context, tracking_disable=cls.tracking_disable
             )
         )
+
+        class ControllerTest(RestController):
+            _root_path = "/test_shopinvader/"
+            _collection_name = "shopinvader.backend"
+            _default_auth = "public"
+
+        # Force service registration by the creation of a fake controller
+        cls._ShopinvaderControllerTest = ControllerTest
         CommonMixin._setup_backend(cls)
         cls.setUpComponent()
+
+    @classmethod
+    def tearDownClass(cls):
+        super(CommonCase, cls).tearDownClass()
+        _rest_controllers_per_module["shopinvader"] = []
 
     def setUp(self):
         # resolve an inheritance issue (common.SavepointCase does not call

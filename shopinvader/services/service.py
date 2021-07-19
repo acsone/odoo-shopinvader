@@ -164,16 +164,6 @@ class BaseShopinvaderService(AbstractComponent):
         )._get_openapi_default_parameters()
         defaults.append(
             {
-                "name": "API-KEY",
-                "in": "header",
-                "description": "Ath API key",
-                "required": True,
-                "schema": {"type": "string"},
-                "style": "simple",
-            }
-        )
-        defaults.append(
-            {
                 "name": "PARTNER-EMAIL",
                 "in": "header",
                 "description": "Logged partner email",

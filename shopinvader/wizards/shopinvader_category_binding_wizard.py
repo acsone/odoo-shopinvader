@@ -88,3 +88,33 @@ class ShopinvaderCategoryBindingWizard(models.TransientModel):
                 self._bind_categories(
                     backend, lang, wizard.product_category_ids
                 )
+
+    @api.model
+    def bind_langs(self, backend, lang_ids):
+        """
+        Ensure that a shopinvader.CATEGORY exists for each lang_id. If not,
+        create a new binding for the missing lang. This method is usefull
+        to ensure that when a lang is added to a backend, all the binding
+        for this lang are created for the existing binded categories
+        :param backend: backend record
+        :param lang_ids: list of lang ids we must ensure that a binding exists
+        :return:
+        """
+        binded_categories = self.env["product.category"].search(
+            [("shopinvader_bind_ids.backend_id", "=", backend.id)]
+        )
+        # use in memory record to avoid the creation of useless records into
+        # the database
+        # by default the wizard check if a product is already binded so we
+        # can use it by giving the list of product already binded in one of
+        # the specified lang and the process will create the missing one.
+
+        # TODO 'new({})' doesn't work into V13 -> should use model lassmethod
+        wiz = self.create(
+            {
+                "lang_ids": self.env["res.lang"].browse(lang_ids),
+                "backend_id": backend.id,
+                "product_category_ids": binded_categories,
+            }
+        )
+        wiz.action_bind_categories()

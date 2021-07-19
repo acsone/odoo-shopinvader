@@ -3,8 +3,9 @@
 # @author Sébastien BEAU <sebastien.beau@akretion.com>
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
-from odoo import _, api, fields, models, tools
-from odoo.http import request
+from contextlib import contextmanager
+
+from odoo import _, api, fields, models
 from odoo.osv import expression
 
 from odoo.addons.queue_job.job import job
@@ -13,6 +14,10 @@ from odoo.addons.server_environment import serv_config
 
 class ShopinvaderBackend(models.Model):
     _name = "shopinvader.backend"
+    _inherit = [
+        "server.env.techname.mixin",
+        "server.env.mixin",
+    ]
 
     name = fields.Char(required=True)
     company_id = fields.Many2one(
@@ -44,12 +49,6 @@ class ShopinvaderBackend(models.Model):
     sequence_id = fields.Many2one(
         "ir.sequence", "Sequence", help="Naming policy for orders and carts"
     )
-    auth_api_key_name = fields.Selection(
-        required=False,  # required into the UI to allow demo data
-        help="The name of the api_key section used for the authentication of"
-        "calls to services dedicated to this backend",
-        selection=lambda a: a._get_auth_api_key_name_selection(),
-    )
     lang_ids = fields.Many2many("res.lang", string="Lang", required=True)
     pricelist_id = fields.Many2one(
         "product.pricelist",
@@ -80,10 +79,10 @@ class ShopinvaderBackend(models.Model):
         "etc.",
     )
     user_id = fields.Many2one(
-        comodel_name="res.users",
-        compute="_compute_user_id",
+        readonly=True,
         help="The technical user used to process calls to the services "
         "provided by the backend",
+        comodel_name="res.users",
     )
     website_public_name = fields.Char(
         help="Public name of your backend/website."
@@ -120,13 +119,13 @@ class ShopinvaderBackend(models.Model):
         "you want to modify existing carts from backend."
     )
 
-    _sql_constraints = [
-        (
-            "auth_api_key_name_uniq",
-            "unique(auth_api_key_name)",
-            "An authentication API Key can be used by only one backend.",
-        )
-    ]
+    @property
+    def _server_env_fields(self):
+        return {"location": {}}
+
+    @api.model
+    def _default_company_id(self):
+        return self.env.company
 
     @api.model
     def _default_pricelist_id(self):
@@ -156,12 +155,6 @@ class ShopinvaderBackend(models.Model):
                 if allow_inactive_user:
                     user_model = user_model.with_context(active_test=False)
             rec.user_id = user_model.search([("login", "=", login_name)])
-
-    @api.model
-    def _default_company_id(self):
-        return self.env["res.company"]._company_default_get(
-            "shopinvader.backend"
-        )
 
     def _to_compute_nbr_content(self):
         """
@@ -317,36 +310,50 @@ class ShopinvaderBackend(models.Model):
     def _extract_configuration(self):
         return {}
 
-    @classmethod
-    def _get_api_key_name(cls, auth_api_key):
-        for section in serv_config.sections():
-            if section.startswith("api_key_") and serv_config.has_option(
-                section, "key"
-            ):
-                if tools.consteq(
-                    auth_api_key, serv_config.get(section, "key")
-                ):
-                    return section
-        return None
+    def _bind_langs(self, lang_ids):
+        self.ensure_one()
+        self.env["shopinvader.variant.binding.wizard"].bind_langs(
+            self, lang_ids
+        )
+        self.env["shopinvader.category.binding.wizard"].bind_langs(
+            self, lang_ids
+        )
 
-    @api.model
-    @tools.ormcache("self._uid", "auth_api_key")
-    def _get_id_from_auth_api_key(self, auth_api_key):
-        auth_api_key_name = self._get_api_key_name(auth_api_key)
-        if auth_api_key_name:
-            # filtered, not search because auth_api_key_name is
-            # not a searchable field
-            return (
-                self.search([])
-                .filtered(lambda r: r.auth_api_key_name == auth_api_key_name)
-                .id
-            )
-        return False
+    def _unbind_langs(self, lang_ids):
+        self.ensure_one()
+        self.env["shopinvader.variant.unbinding.wizard"].unbind_langs(
+            self, lang_ids
+        )
+        self.env["shopinvader.category.unbinding.wizard"].unbind_langs(
+            self, lang_ids
+        )
 
-    @api.model
-    def _get_from_http_request(self):
-        auth_api_key = getattr(request, "auth_api_key", None)
-        return self.browse(self._get_id_from_auth_api_key(auth_api_key))
+    @contextmanager
+    def _keep_binding_sync_with_langs(self):
+        lang_ids_by_record = {}
+        for record in self:
+            lang_ids_by_record[record.id] = record.lang_ids.ids
+        yield
+        for record in self:
+            old_lang_ids = set(lang_ids_by_record[record.id])
+            actual_lang_ids = set(record.lang_ids.ids)
+            if old_lang_ids == actual_lang_ids:
+                continue
+            added_lang_ids = actual_lang_ids - old_lang_ids
+            if added_lang_ids:
+                record._bind_langs(list(added_lang_ids))
+            removed_lang_ids = old_lang_ids - actual_lang_ids
+            if removed_lang_ids:
+                record._unbind_langs(list(removed_lang_ids))
+
+    def write(self, values):
+        with self._keep_binding_sync_with_langs():
+            return super(ShopinvaderBackend, self).write(values)
+
+    def _get_backend_pricelist(self):
+        """The pricelist configure by this backend."""
+        # There must be a pricelist somehow: safe fallback to default Odoo one
+        return self.pricelist_id or self._default_pricelist_id()
 
     @api.multi
     @job(default_channel="root.shopinvader")

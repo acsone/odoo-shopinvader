@@ -20,7 +20,6 @@
     "depends": [
         "base_partition",  # filtered_domain
         "base_rest",
-        "auth_api_key",
         "base_jsonify",
         "base_sparse_field_list_support",
         "base_suspend_security",
@@ -30,6 +29,7 @@
         "sale",
         "sale_discount_display_amount",
         "sale_order_price_recalculation",
+        "server_environment",
         "onchange_helper",
         "queue_job",
     ],

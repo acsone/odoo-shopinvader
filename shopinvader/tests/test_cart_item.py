@@ -44,7 +44,7 @@ class ItemCaseMixin(object):
         )
 
     def check_product_and_qty(self, line, product_id, qty):
-        self.assertEqual(line["product"]["objectID"], product_id)
+        self.assertEqual(line["product"]["id"], product_id)
         self.assertEqual(line["qty"], qty)
 
     @mute_logger("odoo.models.unlink")
@@ -157,7 +157,7 @@ class AbstractItemCase(ItemCaseMixin):
         self.env.user.write(
             {
                 "groups_id": [
-                    (4, self.ref("product.group_discount_per_so_line"), 0)
+                    (4, self.ref("sale.group_discount_per_so_line"), 0)
                 ]
             }
         )
