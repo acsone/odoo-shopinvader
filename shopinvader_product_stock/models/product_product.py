@@ -13,22 +13,31 @@ class ProductProduct(models.Model):
 
     @api.multi
     @job(default_channel="root.search_engine.synchronize_stock")
-    def _synchronize_all_binding_stock_level(self):
-        """
-        The goal of this function is to compute the new stock information
-        and update them in the data field. If data have change and the binding
-        is in done state we force it to 'to_update'.
+    def synchronize_all_binding_stock_level(self, company_id=None):
+        """Compute new stock information and update index data.
+
+        If data changed and binding is in done state it forces it to 'to_update'.
         :return:
         """
-        all_bindinds = self.mapped("shopinvader_bind_ids")
+        # Use `sudo` because this action might be triggered
+        # from a low access level user (eg: external user on portal/website).
+        # In any case, the real operation is done w/ the backend user below.
+
+        # ensure user company propagation if the method has bee delayed...
+        # this feature should be provide by queue job ...
+        # see https://github.com/OCA/queue/issues/363
+        products = self
+        if company_id:
+            products = self.with_context(force_company=company_id)
+
+        all_bindinds = products.mapped("shopinvader_bind_ids")
         backends = all_bindinds.mapped("backend_id")
         for backend in backends:
             bindings = all_bindinds.filtered(
                 lambda r, b=backend: r.backend_id == b
             )
-            # To avoid access rights issues, execute the job with the user
-            # related to the backend
-            bindings = bindings.sudo(backend.user_id.id)
+            # To avoid access rights issues, execute the job with sudo
+            bindings = bindings.sudo()
             for binding in bindings:
                 if binding.sync_state == "new":
                     # this binding have been not yet computed

@@ -34,7 +34,7 @@ class StockMove(models.Model):
             )
             products.with_delay(
                 description=description, identity_key=identity_exact
-            )._synchronize_all_binding_stock_level()
+            ).synchronize_all_binding_stock_level(company_id=self.env.company)
         return True
 
     @api.multi

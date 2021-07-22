@@ -28,7 +28,7 @@ class TestProductProduct(StockCommonCase):
         Recomputing binding which have been not exported yet, do nothing
         """
         self.assertEqual(self.product.shopinvader_bind_ids.sync_state, "new")
-        self.product._synchronize_all_binding_stock_level()
+        self.product.synchronize_all_binding_stock_level()
         self.assertEqual(self.product.shopinvader_bind_ids.data, {})
 
     def _test_update_stock_with_key(self, key_stock, sync_immediatly=True):
