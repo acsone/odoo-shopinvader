@@ -3,13 +3,14 @@
 # @author Sébastien BEAU <sebastien.beau@akretion.com>
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
+import hashlib
+import os
 from contextlib import contextmanager
 
-from odoo import _, api, fields, models
+from odoo import _, api, fields, models, tools
 from odoo.osv import expression
 
 from odoo.addons.queue_job.job import job
-from odoo.addons.server_environment import serv_config
 
 
 class ShopinvaderBackend(models.Model):
@@ -112,6 +113,24 @@ class ShopinvaderBackend(models.Model):
         "that are not bound to this backend. This can be useful if"
         "you want to modify existing carts from backend."
     )
+    website_unique_key = fields.Char(
+        required=True,
+        help="This identifier should be provided by each REST request through "
+        "a WEBSITE-UNIQUE-KEY http header to identify the target backend. "
+        "If not provided by the request, you must pu in place a way to"
+        "lookup the target request for a given request by overriding the"
+        "method _get_backend into the service context provider component. "
+        "The shopinvader_auth_api_key and shopinvader_auth_jwt addons "
+        "provides a fallback mechanism in such a case.",
+        default=lambda self: self._default_website_unique_key(),
+    )
+    _sql_constraints = [
+        (
+            "unique_website_unique_key",
+            "unique(website_unique_key)",
+            _("This website unique key already exists in database"),
+        )
+    ]
 
     @property
     def _server_env_fields(self):
@@ -119,36 +138,27 @@ class ShopinvaderBackend(models.Model):
 
     @api.model
     def _default_company_id(self):
-        return self.env.company
+        return self.env["res.company"]._company_default_get(
+            "shopinvader.backend"
+        )
 
     @api.model
     def _default_pricelist_id(self):
         return self.env.ref("product.list0")
 
     @api.model
-    def _get_auth_api_key_name_selection(self):
-        selection = []
-        for section in serv_config.sections():
-            if section.startswith("api_key_") and serv_config.has_option(
-                section, "key"
-            ):
-                selection.append((section, section))
-        return selection
+    def _default_partner_title_ids(self):
+        return self.env["res.partner.title"].search([])
 
-    @api.depends("auth_api_key_name")
-    @api.multi
-    def _compute_user_id(self):
-        for rec in self:
-            section = rec.auth_api_key_name
-            login_name = serv_config.get(section, "user")
-            user_model = self.env["res.users"]
-            if serv_config.has_option(section, "allow_inactive_user"):
-                allow_inactive_user = serv_config.getboolean(
-                    section, "allow_inactive_user"
-                )
-                if allow_inactive_user:
-                    user_model = user_model.with_context(active_test=False)
-            rec.user_id = user_model.search([("login", "=", login_name)])
+    @api.model
+    def _default_partner_industry_ids(self):
+        return self.env["res.partner.industry"].search([])
+
+    @api.model
+    def _default_website_unique_key(self):
+        return hashlib.pbkdf2_hmac(
+            "sha256", os.urandom(32), os.urandom(32), 100000
+        ).encode("hex")
 
     def _to_compute_nbr_content(self):
         """
@@ -340,10 +350,6 @@ class ShopinvaderBackend(models.Model):
             if removed_lang_ids:
                 record._unbind_langs(list(removed_lang_ids))
 
-    def write(self, values):
-        with self._keep_binding_sync_with_langs():
-            return super(ShopinvaderBackend, self).write(values)
-
     def _get_backend_pricelist(self):
         """The pricelist configure by this backend."""
         # There must be a pricelist somehow: safe fallback to default Odoo one
@@ -413,3 +419,24 @@ class ShopinvaderBackend(models.Model):
                 description=description
             )._job_split_sale_price_update(sale_carts)
         return True
+
+    @api.model
+    @tools.ormcache("self._uid", "website_unique_key")
+    def _get_id_from_website_unique_key(self, website_unique_key):
+        return self.search(
+            [("website_unique_key", "=", website_unique_key)]
+        ).id
+
+    @api.model
+    def _get_from_website_unique_key(self, website_unique_key):
+        return self.browse(
+            self._get_id_from_website_unique_key(website_unique_key)
+        )
+
+    def write(self, values):
+        if "website_unique_key" in values:
+            self._get_id_from_website_unique_key.clear_cache(
+                self.env[self._name]
+            )
+        with self._keep_binding_sync_with_langs():
+            return super(ShopinvaderBackend, self).write(values)

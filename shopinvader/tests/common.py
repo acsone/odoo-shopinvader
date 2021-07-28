@@ -109,8 +109,9 @@ class CommonMixin(ComponentMixin):
         )
         bind_wizard.bind_products()
 
-    def _install_lang(self, lang_xml_id):
-        return _install_lang_odoo(self.env, lang_xml_id)
+    @classmethod
+    def _install_lang(cls, lang_xml_id):
+        return _install_lang_odoo(cls.env, lang_xml_id)
 
 
 class CommonCase(SavepointCase, CommonMixin):

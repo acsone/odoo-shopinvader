@@ -111,7 +111,7 @@ class ShopinvaderVariantBindingWizard(models.TransientModel):
         # the specified lang and the process will create the missing one.
 
         # TODO 'new({})' doesn't work into V13 -> should use model lassmethod
-        wiz = self.create(
+        wiz = self.new(
             {
                 "lang_ids": self.env["res.lang"].browse(lang_ids),
                 "backend_id": backend.id,
