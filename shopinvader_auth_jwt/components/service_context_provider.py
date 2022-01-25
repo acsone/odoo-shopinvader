@@ -44,7 +44,9 @@ class ShopinvaderAuthJwtServiceContextProvider(Component):
                     # Could be because the email is not related to a partner or
                     # because the partner is inactive
                     raise MissingError(_("The given partner is not found!"))
-        return super()._get_shopinvader_partner()
+        return super(
+            ShopinvaderAuthJwtServiceContextProvider, self
+        )._get_shopinvader_partner()
 
     def _get_backend(self):
         backend = super(
