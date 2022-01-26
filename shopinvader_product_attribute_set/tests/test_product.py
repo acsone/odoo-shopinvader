@@ -48,27 +48,27 @@ class ProductCase(ProductCommonCase):
             self.shopinvader_variant.structured_attributes,
             [
                 {
-                    "group_name": "Technical",
+                    "group_name": u"Technical",
                     "fields": [
                         {
                             "value": "true",
                             # TODO cleanup demo in product_attribute_set
                             # name should be "Linux Compatible"
-                            "name": "X Linux Compatible",
-                            "key": "linux_compatible",
-                            "type": "boolean",
+                            "name": u"X linux compatible",
+                            "key": u"linux_compatible",
+                            "type": u"boolean",
                         },
                         {
-                            "value": "Intel i5",
-                            "name": "Processor",
-                            "key": "processor",
-                            "type": "select",
+                            "value": u"Intel i5",
+                            "name": u"Processor",
+                            "key": u"processor",
+                            "type": u"select",
                         },
                         {
-                            "value": "foo",
-                            "name": "Technical Description",
-                            "key": "technical_description",
-                            "type": "text",
+                            "value": u"foo",
+                            "name": u"Technical Description",
+                            "key": u"technical_description",
+                            "type": u"text",
                         },
                     ],
                 }

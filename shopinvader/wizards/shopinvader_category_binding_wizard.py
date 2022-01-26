@@ -25,6 +25,13 @@ class ShopinvaderCategoryBindingWizard(models.TransientModel):
         help="If this option is check, the childs of selected categories"
         " will be automatically binded"
     )
+    lang_ids = fields.Many2many(
+        string="Langs",
+        comodel_name="res.lang",
+        ondelete="cascade",
+        help="List of langs for which a binding must exists. If not "
+        "specified, the list of langs defined on the backend is used.",
+    )
 
     @api.model
     def default_get(self, fields_list):
