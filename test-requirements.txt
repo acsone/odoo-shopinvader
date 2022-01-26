@@ -2,10 +2,10 @@ locomotivecms @ git+https://github.com/shopinvader/locomotivecms-python-client.g
 odoo10-addon-auth-jwt @ git+https://github.com/oca/server-auth.git@refs/pull/281/head#subdirectory=setup/auth_jwt
 odoo10-addon-sale-wishlist @ git+https://github.com/acsone/sale-workflow.git@10.0-alc#subdirectory=setup/sale_wishlist
 odoo10-addon-sale-product-set @ git+https://github.com/acsone/sale-workflow.git@10.0-alc#subdirectory=setup/sale_product_set
-odoo10-addon-auth-jwt @ git+https://github.com/acsone/server-auth.git@7a0b47c529825c8aae7460ae1b01c659ab0fc187#subdirectory=setup/auth_jwt
 odoo10-addon-auth-jwt @ git+https://github.com/oca/server-auth.git@ref/pull/281/head#subdirectory=setup/auth_jwt
 odoo10-addon-base-rest @ git+https://github.com/acsone/rest-framework.git@10.0-backport-context-provider-lmi#subdirectory=setup/base_rest
 odoo10-addon-server-environment @ git+https://github.com/oca/server-tools.git@refs/pull/2076/head#subdirectory=setup/server_environment
+odoo10-addon-auth-api-key @  git+https://github.com/oca/server-auth.git@refs/pull/271/head#subdirectory=setup/auth_api_key
 rsa==4.5 # required by auth_jwt... lastest supported version
 
 # test requirements
