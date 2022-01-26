@@ -45,8 +45,8 @@ class ShopinvaderBackend(models.Model):
                 )
             )
 
-    def _get_partner_pricelist(self, partner):
-        pricelist = super(ShopinvaderBackend, self)._get_partner_pricelist(
+    def _get_cart_pricelist(self, partner=None):
+        pricelist = super(ShopinvaderBackend, self)._get_cart_pricelist(
             partner
         )
         if not self.use_sale_profile:

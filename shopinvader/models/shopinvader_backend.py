@@ -504,6 +504,10 @@ class ShopinvaderBackend(models.Model):
         # There must be a pricelist somehow: safe fallback to default Odoo one
         return self.pricelist_id or self._default_pricelist_id()
 
+    def _validate_partner(self, shopinvader_partner):
+        """Hook to validate partners when required."""
+        return True
+
     @api.model
     def _launch_sale_price_update(self, domain=False):
         """

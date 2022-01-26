@@ -1,2 +1,2 @@
 # -*- coding: utf-8 -*-
-from . import test_shopinvader_elasticsearch
+# from . import test_shopinvader_elasticsearch

@@ -29,8 +29,10 @@ class TestShopinvaderBackendSaleProfile(CommonCase):
         self.assertTrue(profile1.default)
         expected = profile1.pricelist_id
         self.assertEqual(self.backend.pricelist_id, expected)
+        self.backend.use_sale_profile = False
         profile1.default = False
         profile2.default = True
+        self.backend.use_sale_profile = True
         expected = profile2.pricelist_id
         self.assertEqual(self.backend.pricelist_id, expected)
 
@@ -44,8 +46,10 @@ class TestShopinvaderBackendSaleProfile(CommonCase):
         )
         expected = profile1.pricelist_id
         self.assertEqual(self.backend._get_cart_pricelist(), expected)
+        self.backend.use_sale_profile = False
         profile1.default = False
         profile2.default = True
+        self.backend.use_sale_profile = True
         expected = profile2.pricelist_id
         self.assertEqual(self.backend._get_cart_pricelist(), expected)
 
@@ -75,6 +79,12 @@ class TestShopinvaderBackendSaleProfile(CommonCase):
             self.assertEqual(
                 self.backend._get_cart_pricelist(partner), expected
             )
+        invader_partner.refresh()
+        with mock.patch.object(
+            type(invader_partner),
+            "sale_profile_id",
+            new_callable=mock.PropertyMock,
+        ) as mocked:
             mocked.return_value = profile2
             expected = profile2.pricelist_id
             self.assertEqual(
@@ -102,8 +112,10 @@ class TestShopinvaderBackendSaleProfile(CommonCase):
             self.assertEqual(
                 self.backend._get_cart_pricelist(partner), expected
             )
+            self.backend.use_sale_profile = False
             profile1.default = False
             profile2.default = True
+            self.backend.use_sale_profile = True
             expected = profile2.pricelist_id
             self.assertEqual(
                 self.backend._get_cart_pricelist(partner), expected,

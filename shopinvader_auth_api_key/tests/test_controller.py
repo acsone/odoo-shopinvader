@@ -2,23 +2,18 @@
 # Copyright 2017 Akretion (http://www.akretion.com).
 # @author Sébastien BEAU <sebastien.beau@akretion.com>
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
+import os
 import unittest
 from uuid import uuid4
 
 import requests
 
-from odoo.exceptions import MissingError
 from odoo.tools import mute_logger
 
-from odoo.addons.server_environment import serv_config
 from odoo.addons.shopinvader.tests.common import ShopinvaderRestCase
 
 
-@unittest.skipIf(
-    ShopinvaderRestCase.AUTH_API_KEY_NAME not in serv_config.sections(),
-    "You must define an auth_api_key section '%s' into your configuration "
-    "to run controller tests" % ShopinvaderRestCase.AUTH_API_KEY_NAME,
-)
+@unittest.skipIf(os.getenv("SKIP_HTTP_CASE"), "HTTP case disabled.")
 class ShopinvaderControllerCase(ShopinvaderRestCase):
     def setUp(self, *args, **kwargs):
         super(ShopinvaderControllerCase, self).setUp(*args, **kwargs)
@@ -31,7 +26,7 @@ class ShopinvaderControllerCase(ShopinvaderRestCase):
         result = requests.get(
             self.url,
             headers={
-                "API_KEY": self.api_key,
+                "API_KEY": self.backend.auth_api_key_id.key,
                 "PARTNER_EMAIL": "osiris@shopinvader.com",
             },
         )
@@ -46,7 +41,7 @@ class ShopinvaderControllerCase(ShopinvaderRestCase):
         result = requests.get(
             self.url + "?scope[address_type]=address",
             headers={
-                "API_KEY": self.api_key,
+                "API_KEY": self.backend.auth_api_key_id.key,
                 "PARTNER_EMAIL": "osiris@shopinvader.com",
             },
         )
@@ -72,7 +67,9 @@ class ShopinvaderControllerCase(ShopinvaderRestCase):
         self.assertEqual(result.json(), {u"code": 403, u"name": u"Forbidden"})
 
     def test_get_addresses_without_partner(self):
-        result = requests.get(self.url, headers={"API_KEY": self.api_key})
+        result = requests.get(
+            self.url, headers={"API_KEY": self.backend.auth_api_key_id.key}
+        )
         self.assertEqual(result.status_code, 200)
         self.assertEqual(result.json(), {"data": []})
 
@@ -85,12 +82,12 @@ class ShopinvaderControllerCase(ShopinvaderRestCase):
         """
         # This email shouldn't exist
         email = "%s@random.com" % uuid4()
-        headers = {"API_KEY": self.api_key, "PARTNER_EMAIL": email}
-        expected_msg = "The given partner is not found!"
-        with self.assertRaises(MissingError) as e:
-            requests.get(self.url, headers=headers)
-        self.assertIn(expected_msg, e.exception.name)
-        return
+        headers = {
+            "API_KEY": self.backend.auth_api_key_id.key,
+            "PARTNER_EMAIL": email,
+        }
+        res = requests.get(self.url, headers=headers)
+        self.assertEqual(res.status_code, 404)
 
     def test_email_inactive(self):
         """
@@ -102,14 +99,11 @@ class ShopinvaderControllerCase(ShopinvaderRestCase):
         # This email should exist
         self.partner.write({"active": False})
         headers = {
-            "API_KEY": self.api_key,
+            "API_KEY": self.backend.auth_api_key_id.key,
             "PARTNER_EMAIL": self.partner.email,
         }
-        expected_msg = "The given partner is not found!"
-        with self.assertRaises(MissingError) as e:
-            requests.get(self.url, headers=headers)
-        self.assertIn(expected_msg, e.exception.name)
-        return
+        res = requests.get(self.url, headers=headers)
+        self.assertEqual(res.status_code, 404)
 
     def test_email_not_provided(self):
         """
@@ -119,6 +113,6 @@ class ShopinvaderControllerCase(ShopinvaderRestCase):
         :return:
         """
         # Do not provide PARTNER_EMAIL key
-        headers = {"API_KEY": self.api_key}
+        headers = {"API_KEY": self.backend.auth_api_key_id.key}
         requests.get(self.url, headers=headers)
         return

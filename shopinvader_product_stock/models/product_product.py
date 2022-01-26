@@ -28,7 +28,7 @@ class ProductProduct(models.Model):
         # see https://github.com/OCA/queue/issues/363
         products = self
         if company_id:
-            products = self.with_context(force_company=company_id)
+            products = self.with_context(force_company=company_id.id)
 
         all_bindinds = products.mapped("shopinvader_bind_ids")
         backends = all_bindinds.mapped("backend_id")

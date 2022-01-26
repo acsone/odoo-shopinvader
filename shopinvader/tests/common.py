@@ -19,7 +19,6 @@ from odoo.addons.base_rest.tests.common import BaseRestCase
 from odoo.addons.component.core import WorkContext
 from odoo.addons.component.tests.common import ComponentMixin
 from odoo.addons.queue_job.job import Job
-from odoo.addons.server_environment import serv_config
 from odoo.addons.shopinvader.models.track_external_mixin import (
     TrackExternalMixin,
 )
@@ -99,15 +98,6 @@ class CommonMixin(ComponentMixin, UtilsMixin):
         )
         cls.backend.bind_all_product()
         cls.shopinvader_session = {}
-        cls.api_key = "myApiKey"
-        cls.auth_api_key_name = getattr(
-            cls, "AUTH_API_KEY_NAME", "api_key_shopinvader_test"
-        )
-        if cls.auth_api_key_name not in serv_config.sections():
-            serv_config.add_section(cls.auth_api_key_name)
-            serv_config.set(cls.auth_api_key_name, "user", "admin")
-            serv_config.set(cls.auth_api_key_name, "key", cls.api_key)
-        cls.backend.auth_api_key_name = cls.auth_api_key_name
         cls.backend_liege = cls.env.ref("shopinvader.backend_liege")
         cls.company_liege = cls.env.ref("shopinvader.res_company_liege")
 
@@ -159,7 +149,11 @@ class CommonMixin(ComponentMixin, UtilsMixin):
         backend = backend or self.backend
         bind_wizard_model = self.env["shopinvader.variant.binding.wizard"]
         bind_wizard = bind_wizard_model.create(
-            {"backend_id": backend.id, "product_ids": [(6, 0, products.ids)]}
+            {
+                "backend_id": backend.id,
+                "product_ids": [(6, 0, products.ids)],
+                "run_immediately": True,
+            }
         )
         bind_wizard.bind_products()
 
@@ -263,19 +257,6 @@ class ShopinvaderRestCase(BaseRestCase):
         # To ensure multi-backend works correctly, we just have to create
         # a new one on the same company.
         self.backend_copy = self.env.ref("shopinvader.backend_2")
-        self.api_key = "myApiKey"
-        self.api_key2 = "myApiKey2"
-        self.auth_api_key_name = self.AUTH_API_KEY_NAME
-        self.auth_api_key_name2 = self.AUTH_API_KEY_NAME2
-        if self.auth_api_key_name not in serv_config.sections():
-            serv_config.add_section(self.auth_api_key_name)
-            serv_config.set(self.auth_api_key_name, "user", "admin")
-            serv_config.set(self.auth_api_key_name, "key", self.api_key)
-        if self.auth_api_key_name2 not in serv_config.sections():
-            serv_config.add_section(self.auth_api_key_name2)
-            serv_config.set(self.auth_api_key_name2, "user", "admin")
-            serv_config.set(self.auth_api_key_name2, "key", self.api_key2)
-        self.backend.auth_api_key_name = self.auth_api_key_name2
 
 
 class CommonTestDownload(object):

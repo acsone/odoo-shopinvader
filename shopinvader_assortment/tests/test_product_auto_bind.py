@@ -8,9 +8,12 @@ from odoo.tests.common import TransactionCase
 class TestProductAutoBind(TransactionCase):
     def setUp(self):
         super(TestProductAutoBind, self).setUp()
-        self.backend = self.env.ref("shopinvader.backend_1")
+        self.backend = self.env.ref("shopinvader.backend_1").with_context(
+            bind_products_immediately=True
+        )
         self.variant_obj = self.env["shopinvader.variant"]
         self.product_obj = self.env["product.product"]
+        self.backend.product_assortment_id.domain = "[('sale_ok', '=', True)]"
 
     def test_shopinvader_auto_product_auto_bind(self):
         # Test bind all products from assortment domain
@@ -27,8 +30,8 @@ class TestProductAutoBind(TransactionCase):
             [("backend_id", "=", self.backend.id)]
         )
 
-        self.assertEqual(
-            products_to_bind.ids, variants.mapped("record_id").ids
+        self.assertSetEqual(
+            set(products_to_bind.ids), set(variants.mapped("record_id").ids)
         )
 
         # Exclude one product, related binding should be inactivated
@@ -84,8 +87,8 @@ class TestProductAutoBind(TransactionCase):
             [("backend_id", "=", self.backend.id)]
         )
 
-        self.assertEqual(
-            products_to_bind.ids, variants.mapped("record_id").ids
+        self.assertSetEqual(
+            set(products_to_bind.ids), set(variants.mapped("record_id").ids)
         )
 
         # Exclude one product, related binding should be inactivated

@@ -60,7 +60,6 @@ class ShopinvaderPartner(models.Model):
             .ids
         )
         partners = self.mapped("record_id")
-        pricelists = partners.mapped("property_product_pricelist")
         default_sale_profiles = self._get_default_profiles(backend_ids)
         # company_id field is mandatory so we don't have manage empty value
         for company in self.mapped("backend_id.company_id"):
@@ -69,6 +68,9 @@ class ShopinvaderPartner(models.Model):
             )
             # Get every fiscal position ids (without duplicates)
             fposition_ids = list(set(fposition_by_partner.values()))
+            pricelists = partners.with_context(
+                force_company=company.id
+            ).mapped("property_product_pricelist")
             sale_profiles = self._get_sale_profiles(
                 backend_ids, pricelists, fposition_ids, company
             )
@@ -87,7 +89,12 @@ class ShopinvaderPartner(models.Model):
                     sale_profile = binding._sale_profile_with_backend(
                         default_sale_profiles, fposition_id, sale_profiles
                     )
-                binding.sale_profile_id = sale_profile
+                # We change the context during the compute so we have to
+                # update values manually (because we have 2 caches;
+                # due to with_context())
+                record = self.filtered(lambda p, b=binding: p.id == b.id)
+                record = record.with_prefetch(self._prefetch)
+                record.sale_profile_id = sale_profile
 
     def _sale_profile_with_backend(
         self, default_sale_profiles, fposition_id, sale_profiles
@@ -200,5 +207,5 @@ class ShopinvaderPartner(models.Model):
                 partner.id, delivery_id=partner.id
             )
             if fpos:
-                fposition_by_partner[partner.id] = fpos.id
+                fposition_by_partner[partner.id] = fpos
         return fposition_by_partner
