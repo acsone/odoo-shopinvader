@@ -12,16 +12,10 @@
     "license": "AGPL-3",
     "category": "Generic Modules",
     "depends": [
-        "shopinvader",
-        "connector_search_engine",
-        "base_technical_user",
+        "search_engine_serializer_pydantic",
+        "shopinvader_product",
     ],
-    "data": [
-        "views/shopinvader_backend_view.xml",
-        "views/shopinvader_variant_view.xml",
-        "views/shopinvader_category_view.xml",
-        "data/queue_job_function_data.xml",
-    ],
+    "data": [],
     "installable": True,
     "application": True,
 }
