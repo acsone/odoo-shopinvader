@@ -14,6 +14,7 @@
         "pydantic",
         "extendable",
         "extendable_fastapi",
+        "shopinvader_base_url",
     ],
     "data": [],
     "demo": [],
