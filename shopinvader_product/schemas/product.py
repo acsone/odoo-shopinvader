@@ -13,7 +13,7 @@ class ShopinvaderProduct(StrictExtendableBaseModel):
 
     @classmethod
     def from_shopinvader_product(cls, odoo_rec):
-        return cls.model_construct(name=odoo_rec.shopinvader_display_name)
+        return cls.model_construct(name=odoo_rec.display_name)
 
 
 class ShopinvaderProductPriceInfo(StrictExtendableBaseModel):
@@ -27,7 +27,7 @@ class ShopinvaderVariant(StrictExtendableBaseModel):
     id: int
     model: ShopinvaderProduct
     main: bool = False
-    full_name: str | None = None
+    name: str | None = None
     short_name: str | None = None
     variant_count: int = 0
     categories: list[ShortShopinvaderCategory] = []
@@ -41,7 +41,7 @@ class ShopinvaderVariant(StrictExtendableBaseModel):
             id=odoo_rec.id,
             model=ShopinvaderProduct.from_shopinvader_product(odoo_rec.product_tmpl_id),
             main=odoo_rec.main,
-            full_name=odoo_rec.name or None,
+            name=odoo_rec.full_name or None,
             short_name=odoo_rec.short_name or None,
             variant_count=odoo_rec.product_variant_count,
             categories=[
