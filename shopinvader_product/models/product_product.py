@@ -2,6 +2,8 @@
 # @author Sébastien BEAU <sebastien.beau@akretion.com>
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
+from itertools import groupby
+
 from odoo import api, fields, models
 
 from .tools import sanitize_attr_name
@@ -20,6 +22,7 @@ class ProductProduct(models.Model):
     )
     short_name = fields.Char(compute="_compute_names")
     full_name = fields.Char(compute="_compute_names")
+    main = fields.Boolean(compute="_compute_main_product")
 
     def _compute_variant_attributes(self):
         for record in self:
@@ -51,3 +54,43 @@ class ProductProduct(models.Model):
                 record.full_name,
                 record.short_name,
             ) = record._prepare_variant_name_and_short_name()
+
+    @api.model
+    def _get_shopinvader_product_variants(self, product_ids):
+        # Use sudo to bypass permissions (we don't care)
+        return self.sudo().search(
+            [("product_tmpl_id", "in", product_ids)], order="product_tmpl_id"
+        )
+
+    def _compute_main_product(self):
+        # Respect same order.
+        order_by = [x.strip() for x in self.env["product.product"]._order.split(",")]
+        fields_to_read = ["product_tmpl_id"] + [f.split(" ")[0] for f in order_by]
+        product_ids = self.mapped("product_tmpl_id").ids
+        _variants = self._get_shopinvader_product_variants(product_ids)
+        # Use `load=False` to not load template name
+        variants = _variants.read(fields_to_read, load=False)
+        var_by_product = groupby(variants, lambda x: x["product_tmpl_id"])
+
+        def pick_1st_variant(variants):
+            def get_value(record, key):
+                if record[key] is False and self._fields[key].type in ("char", "text"):
+                    return ""
+                else:
+                    return record[key]
+
+            for order_key in reversed(order_by):
+                order_key_split = order_key.split(" ")
+                reverse = len(order_key_split) > 1 and order_key_split[1] == "desc"
+                variants.sort(
+                    key=lambda var: get_value(var, order_key_split[0]),
+                    reverse=reverse,
+                )
+            return variants[0].get("id") if variants else None
+
+        main_by_product = {
+            product: pick_1st_variant(list(variants))
+            for product, variants in var_by_product
+        }
+        for record in self:
+            record.main = main_by_product.get(record.product_tmpl_id.id) == record.id
