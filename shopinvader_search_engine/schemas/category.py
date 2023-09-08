@@ -8,10 +8,9 @@ from odoo.addons.shopinvader_product.schemas.category import (
 
 class ShortShopinvaderCategory(BaseShortShopinvaderCategory, extends=True):
     @classmethod
-    def from_shopinvader_category(
-        cls, odoo_rec, with_hierarchy=False, index=None, *args, **kwargs
-    ):
-        obj = super().from_shopinvader_category(odoo_rec, *args, **kwargs)
+    def from_shopinvader_category(cls, odoo_rec, with_hierarchy=False):
+        obj = super().from_shopinvader_category(odoo_rec)
+        index = odoo_rec._context.get("index", False)
         if with_hierarchy and index:
             parent = odoo_rec.parent_id.filtered(
                 lambda parent, index=index: index
@@ -22,16 +21,12 @@ class ShortShopinvaderCategory(BaseShortShopinvaderCategory, extends=True):
                 in child.se_binding_ids.mapped("index_id")
             )
             obj.parent = (
-                ShortShopinvaderCategory.from_shopinvader_category(
-                    parent, *args, **kwargs
-                )
+                ShortShopinvaderCategory.from_shopinvader_category(parent)
                 if parent
                 else None
             )
             obj.childs = [
-                ShortShopinvaderCategory.from_shopinvader_category(
-                    child, *args, **kwargs
-                )
+                ShortShopinvaderCategory.from_shopinvader_category(child)
                 for child in children
             ]
         return obj

@@ -43,8 +43,8 @@ class SeIndex(models.Model):
     def _get_serializer(self):
         self.ensure_one()
         if self.serializer_type == "shopinvader_category_exports":
-            return ProductCategoryShopinvaderSerializer(self)
+            return ProductCategoryShopinvaderSerializer()
         elif self.serializer_type == "shopinvader_product_exports":
-            return ProductProductShopinvaderSerializer(self)
+            return ProductProductShopinvaderSerializer()
         else:
             return super()._get_serializer()

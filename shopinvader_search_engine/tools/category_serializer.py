@@ -8,11 +8,8 @@ from odoo.addons.shopinvader_product.schemas.category import ShopinvaderCategory
 
 
 class ProductCategoryShopinvaderSerializer(PydanticModelSerializer):
-    def __init__(self, index):
-        self.index = index
-
     def get_model_class(self):
         return ShopinvaderCategory
 
     def serialize(self, record):
-        return self.get_model_class().from_shopinvader_category(record, index=self.index).model_dump()
+        return self.get_model_class().from_shopinvader_category(record).model_dump()
