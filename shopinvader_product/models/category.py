@@ -18,6 +18,8 @@ class ProductCategory(models.Model):
     _rec_name = None
 
     name = fields.Char(translate=True)
+    active = fields.Boolean(default=True)
+    level = fields.Integer(compute="_compute_level")
 
     def name_get(self):
         def get_names(cat):
@@ -78,3 +80,16 @@ class ProductCategory(models.Model):
         else:
             categories = self.search(args, limit=limit)
         return categories.name_get()
+
+    def _get_parent(self):
+        self.ensure_one()
+        return self.parent_id
+
+    @api.depends("parent_id", "parent_id.active")
+    def _compute_level(self):
+        for record in self:
+            record.level = 0
+            parent = record._get_parent()
+            while parent and parent.active:
+                record.level += 1
+                parent = parent._get_parent()

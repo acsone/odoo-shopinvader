@@ -11,12 +11,7 @@ class ProductProduct(models.Model):
     @api.model
     def _get_shopinvader_product_variants(self, product_ids):
         variants = super()._get_shopinvader_product_variants(product_ids)
-        index = self._context.get("index", False)
-        if index:
-            variants = variants.filtered(
-                lambda variant, index=index: index
-                in variant.se_binding_ids.mapped("index_id")
-            )
+        variants = variants._filter_by_index()
         return variants
 
     @api.depends_context("index")

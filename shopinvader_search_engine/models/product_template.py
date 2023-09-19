@@ -7,26 +7,16 @@ from odoo import api, models
 class ProductTemplate(models.Model):
     _inherit = "product.template"
 
-    @api.model
-    def _filter_categories_by_index(self, categories):
-        index = self._context.get("index", False)
-        if index:
-            categories = categories.filtered(
-                lambda category, index=index: index
-                in category.se_binding_ids.mapped("index_id")
-            )
-        return categories
-
     def _get_categories(self):
         self.ensure_one()
         categories = super()._get_categories()
-        self._filter_categories_by_index(categories)
+        categories = categories._filter_by_index()
         return categories
 
     @api.model
     def _get_parent_categories(self, categ_ids):
         categories = super()._get_parent_categories(categ_ids)
-        self._filter_categories_by_index(categories)
+        categories = categories._filter_by_index()
         return categories
 
     @api.depends_context("index")

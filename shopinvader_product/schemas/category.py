@@ -16,18 +16,22 @@ class ShortShopinvaderCategory(StrictExtendableBaseModel):
     @classmethod
     def from_shopinvader_category(cls, odoo_rec, with_hierarchy=False):
         obj = cls.model_construct(
-            id=odoo_rec.id, name=odoo_rec.name, level=odoo_rec.short_description
+            id=odoo_rec.id, name=odoo_rec.name, level=odoo_rec.level
         )
         if with_hierarchy:
             parent = odoo_rec.parent_id
             children = odoo_rec.child_id
             obj.parent = (
-                ShortShopinvaderCategory.from_shopinvader_category(parent)
+                ShortShopinvaderCategory.from_shopinvader_category(
+                    parent, with_hierarchy=True
+                )
                 if parent
                 else None
             )
             obj.childs = [
-                ShortShopinvaderCategory.from_shopinvader_category(child)
+                ShortShopinvaderCategory.from_shopinvader_category(
+                    child, with_hierarchy=True
+                )
                 for child in children
             ]
         return obj
