@@ -19,6 +19,7 @@ class ProductCategory(models.Model):
 
     name = fields.Char(translate=True)
     active = fields.Boolean(default=True)
+    sequence = fields.Integer()
     level = fields.Integer(compute="_compute_level")
 
     def name_get(self):
