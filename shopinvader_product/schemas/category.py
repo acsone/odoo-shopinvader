@@ -14,23 +14,32 @@ class ShortShopinvaderCategory(StrictExtendableBaseModel):
     childs: list[ShortShopinvaderCategory] = []
 
     @classmethod
-    def from_shopinvader_category(cls, odoo_rec, with_hierarchy=False):
+    def _get_parent(cls, odoo_rec):
+        return odoo_rec.parent_id
+
+    @classmethod
+    def _get_children(cls, odoo_rec):
+        return odoo_rec.child_id
+
+    @classmethod
+    def from_shopinvader_category(cls, odoo_rec, with_parent=False, with_child=False):
         obj = cls.model_construct(
             id=odoo_rec.id, name=odoo_rec.name, level=odoo_rec.level
         )
-        if with_hierarchy:
-            parent = odoo_rec.parent_id
-            children = odoo_rec.child_id
+        if with_parent:
+            parent = cls._get_parent(odoo_rec)
             obj.parent = (
                 ShortShopinvaderCategory.from_shopinvader_category(
-                    parent, with_hierarchy=True
+                    parent, with_parent=True
                 )
                 if parent
                 else None
             )
+        if with_child:
+            children = cls._get_children(odoo_rec)
             obj.childs = [
                 ShortShopinvaderCategory.from_shopinvader_category(
-                    child, with_hierarchy=True
+                    child, with_child=True
                 )
                 for child in children
             ]
@@ -42,6 +51,8 @@ class ShopinvaderCategory(ShortShopinvaderCategory):
 
     @classmethod
     def from_shopinvader_category(cls, odoo_rec):
-        obj = super().from_shopinvader_category(odoo_rec, with_hierarchy=True)
+        obj = super().from_shopinvader_category(
+            odoo_rec, with_parent=True, with_child=True
+        )
         obj.sequence = odoo_rec.sequence or None
         return obj
