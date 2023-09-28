@@ -9,3 +9,6 @@ unittest2 # For shopinvader test_controller, which inherits component
 odoo-test-helper
 httpx  # For FastAPI tests
 odoo-addon-extendable-fastapi @ git+https://github.com/OCA/rest-framework@refs/pull/364/head#subdirectory=setup/extendable_fastapi
+
+odoo-addon-connector-search-engine @ git+https://github.com/oca/search_engine.git@refs/pull/161/head#subdirectory=setup/connector_search_engine
+odoo-addon-search-engine-serializer-pydantic @ git+https://github.com/oca/search_engine.git@refs/pull/159/head#subdirectory=setup/search_engine_serializer_pydantic
