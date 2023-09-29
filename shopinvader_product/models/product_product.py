@@ -7,6 +7,8 @@ from itertools import groupby
 from odoo import api, fields, models
 from odoo.tools import float_compare, float_is_zero
 
+from odoo.addons.base_sparse_field.models.fields import Serialized
+
 from ..utils import float_round
 from .tools import sanitize_attr_name
 
@@ -14,7 +16,7 @@ from .tools import sanitize_attr_name
 class ProductProduct(models.Model):
     _inherit = "product.product"
 
-    variant_attributes = fields.Serialized(
+    variant_attributes = Serialized(
         compute="_compute_variant_attributes", string="Shopinvader Attributes"
     )
     attribute_value_ids = fields.Many2many(
@@ -25,7 +27,7 @@ class ProductProduct(models.Model):
     short_name = fields.Char(compute="_compute_names")
     full_name = fields.Char(compute="_compute_names")
     main = fields.Boolean(compute="_compute_main_product")
-    price = fields.Serialized(compute="_compute_price", string="Shopinvader Price")
+    price = Serialized(compute="_compute_price", string="Shopinvader Price")
 
     def _compute_variant_attributes(self):
         for record in self:
