@@ -16,7 +16,11 @@
         "extendable_fastapi",
     ],
     "data": ["views/product_category.xml", "views/product_template.xml"],
-    "demo": [],
+    "demo": [
+        "demo/product_category.xml",
+        "demo/product_attribute_value.xml",
+        "demo/product_product.xml",
+    ],
     "external_dependencies": {
         "python": ["extendable_pydantic>=1.1.1", "pydantic>=2.0.0", "unidecode"]
     },
