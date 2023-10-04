@@ -6,12 +6,12 @@ from __future__ import annotations
 from odoo.addons.extendable_fastapi import StrictExtendableBaseModel
 
 
-class ShortShopinvaderCategory(StrictExtendableBaseModel):
+class ShortProductCategory(StrictExtendableBaseModel):
     id: int
     name: str
     level: int
-    parent: ShortShopinvaderCategory | None = None
-    childs: list[ShortShopinvaderCategory] = []
+    parent: ShortProductCategory | None = None
+    childs: list[ShortProductCategory] = []
 
     @classmethod
     def _get_parent(cls, odoo_rec):
@@ -22,37 +22,31 @@ class ShortShopinvaderCategory(StrictExtendableBaseModel):
         return odoo_rec.child_id
 
     @classmethod
-    def from_shopinvader_category(cls, odoo_rec, with_parent=False, with_child=False):
+    def from_product_category(cls, odoo_rec, with_parent=False, with_child=False):
         obj = cls.model_construct(
             id=odoo_rec.id, name=odoo_rec.name, level=odoo_rec.level
         )
         if with_parent:
             parent = cls._get_parent(odoo_rec)
             obj.parent = (
-                ShortShopinvaderCategory.from_shopinvader_category(
-                    parent, with_parent=True
-                )
+                ShortProductCategory.from_product_category(parent, with_parent=True)
                 if parent
                 else None
             )
         if with_child:
             children = cls._get_children(odoo_rec)
             obj.childs = [
-                ShortShopinvaderCategory.from_shopinvader_category(
-                    child, with_child=True
-                )
+                ShortProductCategory.from_product_category(child, with_child=True)
                 for child in children
             ]
         return obj
 
 
-class ShopinvaderCategory(ShortShopinvaderCategory):
+class ProductCategory(ShortProductCategory):
     sequence: int | None = None
 
     @classmethod
-    def from_shopinvader_category(cls, odoo_rec):
-        obj = super().from_shopinvader_category(
-            odoo_rec, with_parent=True, with_child=True
-        )
+    def from_product_category(cls, odoo_rec):
+        obj = super().from_product_category(odoo_rec, with_parent=True, with_child=True)
         obj.sequence = odoo_rec.sequence or None
         return obj

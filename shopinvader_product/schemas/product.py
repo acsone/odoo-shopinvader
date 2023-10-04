@@ -5,47 +5,47 @@ from typing import Any
 
 from odoo.addons.extendable_fastapi import StrictExtendableBaseModel
 
-from .category import ShortShopinvaderCategory
+from .category import ShortProductCategory
 
 
-class ShopinvaderProduct(StrictExtendableBaseModel):
+class ProductTemplate(StrictExtendableBaseModel):
     name: str
 
     @classmethod
-    def from_shopinvader_product(cls, odoo_rec):
+    def from_product_template(cls, odoo_rec):
         return cls.model_construct(name=odoo_rec.display_name)
 
 
-class ShopinvaderProductPriceInfo(StrictExtendableBaseModel):
+class ProductTemplatePriceInfo(StrictExtendableBaseModel):
     value: float = 0
     tax_included: bool = False
     original_value: float = 0
     discount: float = 0
 
 
-class ShopinvaderVariant(StrictExtendableBaseModel):
+class ProductProduct(StrictExtendableBaseModel):
     id: int
-    model: ShopinvaderProduct
+    model: ProductTemplate
     main: bool = False
     name: str | None = None
     short_name: str | None = None
     variant_count: int = 0
-    categories: list[ShortShopinvaderCategory] = []
+    categories: list[ShortProductCategory] = []
     sku: str | None = None
     variant_attributes: dict[str, Any] = {}
-    price: dict[str, ShopinvaderProductPriceInfo] = {}
+    price: dict[str, ProductTemplatePriceInfo] = {}
 
     @classmethod
-    def from_shopinvader_variant(cls, odoo_rec):
+    def from_product_product(cls, odoo_rec):
         return cls.model_construct(
             id=odoo_rec.id,
-            model=ShopinvaderProduct.from_shopinvader_product(odoo_rec.product_tmpl_id),
+            model=ProductTemplate.from_product_template(odoo_rec.product_tmpl_id),
             main=odoo_rec.main,
             name=odoo_rec.full_name or None,
             short_name=odoo_rec.short_name or None,
             variant_count=odoo_rec.product_variant_count,
             categories=[
-                ShortShopinvaderCategory.from_shopinvader_category(shopinvader_category)
+                ShortProductCategory.from_product_category(shopinvader_category)
                 for shopinvader_category in odoo_rec.shopinvader_categ_ids
             ],
             sku=odoo_rec.default_code or None,
