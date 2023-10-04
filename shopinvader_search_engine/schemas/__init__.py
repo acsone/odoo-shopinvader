@@ -1,1 +1,1 @@
-from . import category
+from .category import ShortProductCategory
