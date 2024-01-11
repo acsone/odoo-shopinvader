@@ -130,7 +130,7 @@ class ShopinvaderApiCartRouterHelper(models.AbstractModel):
         if reward.reward_type == "product":
             product_id = self._check_free_reward_product(reward, data.free_product_id)
 
-        self.env["sale.loyalty.reward.wizard"].create(
+        self.env["sale.loyalty.reward.wizard"].sudo().create(
             {
                 "order_id": cart.id,
                 "selected_reward_id": reward.id if reward else None,
@@ -152,6 +152,7 @@ class ShopinvaderApiCartRouterHelper(models.AbstractModel):
         product_id = self._check_free_reward_product(reward, data.free_product_id)
         return (
             self.env["sale.loyalty.reward.wizard"]
+            .sudo()
             .create(
                 {
                     "order_id": cart.id,
